@@ -1,0 +1,141 @@
+---
+title: "Online Retail Kaggle"
+author: "Tri Juhari"
+date: "10/30/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(readr)
+library(magrittr)
+library(dplyr)
+library(reshape2)
+library(lubridate)
+```
+
+## Analisis Deskriptif
+Data Retail Online didapatkan  dari website kaggle  dengan nama Retail Online atau dapat diunduh di <https://www.kaggle.com/sanjeet41/online-retail>.
+Analisis akan dilakukan secara mendetail bagi perusahaan yang mempunyai data online retail tersebut untuk memajukan perusahan tersebut dengan melakukan kebijakan berdasarkan rekomendasi dari hasil analisis yang dilakukan.
+Sebelum melakukan analisis, run package- package yang dibutuhkan seperti ggplot2 untuk proses visualisasi data, readr untuk proses import data, dplyr untuk manipulasi data. 
+```{r}
+
+online_retail <- read.csv("/media/tijeee/New Volume/DATASCIENCE/KAGGLE/online_retail.csv")
+costumer <- online_retail[!(data$StockCode==" "),]
+View(costumer)
+```
+## Checking Dimension and Variable Data
+```{r}
+dim(costumer)
+summary(costumer)
+str(costumer)
+```
+ Berdasarkan pengecekan dimensi dan variabel data  dalam dataset ini  terdapat 240007  baris dan 8 kolom, Variabel variabel tersebut dapat dilihat seperti diatas. InvoiceNo sebagai kode pembelian costumer dengan tipe data  faktor.
+ StockCode  sebagai kode barang  dengan tipe data Faktor, Description  sebagai deskripsi barang atau nama barangnya dengan tipe data factor, Quantity sebagai jumlah dari barang yang dibeli oleh costumer dengan tipe data integer. InvoiceDate sebagai waktu atau tanggal pembelian  dengan tipe data factor.UnitPrice sebagai  harga produk perunitnya dengan tipe data numbner. CustomerID sebagai kode unik dari si customer atau bisa dibilang id si pembeli yang bersifat unik.Country adalah negara asal costumer  dengan tipe data factor.
+ 
+## Data Cleansing 
+```{r}
+sapply(costumer, function(x) sum(is.na(x)))
+sum(is.na(costumer$CustomerID))
+costumer = dplyr::filter(costumer, !is.na(CustomerID))
+```
+
+
+## Frekunsi based Costumer Country
+ 
+```{r}
+table(costumer$Country)
+sort(table(costumer$Country))
+jumlah_costumer= costumer %>% group_by(costumer$Country) %>% summarise(n=n()) %>% ungroup() %>% arrange(desc(jumlah_costumer$n))
+jumlah_costumer  
+jumlah_costumerku = data.frame("Negara"= jumlah_costumer$`costumer$Country`, "Jumlah"= jumlah_costumer$n)
+ jumlah_costumerku1 = head(jumlah_costumerku)
+ jumlah_costumerku1
+ggplot(data = jumlah_costumerku1, aes(x= jumlah_costumerku1$Negara, y=jumlah_costumerku1$Jumlah, fill=jumlah_costumerku1$Negara))+ geom_bar(stat="identity") + labs( x="Negara", y= "Jumlah", title = " Frekuensi Berdasarkan Negara" )
+ 
+```
+ Berdasarkan dataset diatas, costumer tersebar dari 38 negara dimana negara dengan  costumer yang paling banyak berasal dari UK  berjumlah 220279 dan yang  ter sediikit dari UEA berjumlah 1.
+ 
+## Frequency of sales day by day
+
+```{r}
+max_week_sale <- filter(costumer, !is.na(CustomerID), !is.na(StockCode))
+max_week_sale$InvoiceDate=mdy_hm(max_week_sale$InvoiceDate)
+max_week_sale$weekdays <- weekdays(max_week_sale$InvoiceDate)
+max_week_sale$Sales <- max_week_sale$Quantity * max_week_sale$UnitPrice
+highsales = max_week_sale %>% group_by(max_week_sale$weekdays) %>% summarize(Salesamount = sum(Sales)) %>% arrange(desc(Salesamount))
+highsales= head(highsales)
+highsales
+ggplot(highsales, aes(x= highsales$`max_week_sale$weekdays`, y= highsales$Salesamount, group=1))+ geom_line() + geom_point()+ labs(x = "Hari Penjualan", y="Jumlah Penjualan", title = "Frequency of Sales Day by Day" )
+```
+
+Berdasarkaan  frekuensi penjualan perhari bahwa  dalam satu minggu, diketahui jumlah penjualan perhari dalam 1 minggu. Penjualan tertinggi terjadi pada hari Kamis dengan penjualan 805537 produk, kemudian hari Selasa dengan 732736 produk, hari Rabu dengan 690984 produk, hari Jum’at dengan 555412 produk, hari Senin dengan 518657 produk, dan penjualan terendah terjadi pada hari Minggu dengan penjualan 322900 produk.
+
+## Costumer yang Datang Beli lagi
+
+```{r}
+repeatcost= costumer %>% group_by((costumer$CustomerID), n_distinct(InvoiceDate))%>%summarise(Count=n())%>% ungroup()%>%arrange()
+repeatcost
+```
+## Which Product Bring Most Revenue
+```{r}
+revenue=costumer %>% group_by(costumer$StockCode) %>% summarise(sales=sum(Quantity*UnitPrice)) %>% ungroup()%>% arrange(desc(sales))
+revenue
+
+
+Sales_Detail<-costumer %>% mutate(Sales_Amount = Quantity*UnitPrice)
+
+sales<-Sales_Detail%>% filter(!is.na(Sales_Amount))
+
+sales %>%group_by(Country)%>% summarise(SalesAmount =sum(Sales_Amount= Quantity*UnitPrice)) %>%arrange(desc(SalesAmount))
+
+```
+Gambar diatas menjelaskan tentang 10 produk yang paling banyak diminati oleh customer. Urutan pertama yang paling diminati adalah produk dengan kode 22423, dimana produk ini telah terjual sebanyak 101062 produk dan kode DOT sebanyak 87936 produk, dan begitu seterusnya dimana semakin bawah urutan kode produk maka semakin sedikit pembeli dari produk tersebut.
+ 
+ Gambar diatas menunjukkan 10 peringkat tertinggi dengan jumlah produk yang terjual terhadap negara tertentu. Penjualan tertinggi berada pada negara United Kingdom dengan jumlah penjualan 3572911 produk. Kemudian dilanjutkan dengan Netherlands sebanyak 125721 produk, Germany sebanyak 103526 produk, EIRE sebanyak 99384 produk, France sebanyak 87443 produk, Australia sebanyak 79071 produk, Spain sebanyak 24723 produk, Switzerland sebanyak 22654 produk, Japan sebanyak 21133 produk, dan urutan ke 10 adalah Belgium sebanyak 17251 produk, dan begitu seterusnya dimana semakin bawah urutan negara maka semakin sedikit produk yang terjual pada negara tersebut.
+## #Can you find out which hours are most crowded and, therefore, need more staff?
+
+```{r}
+max_week_sale$hour_sale = hour(max_week_sale$InvoiceDate)
+peakhour = max_week_sale %>% group_by(max_week_sale$hour_sale)%>% summarise(hoursale = sum(hour_sale))%>%arrange(desc(hoursale))
+head(peakhour)
+peakhour
+plot(peakhour)
+```
+Penjualan dengan jumlah yang tinggi juga memerlukan staff tambahan untuk agar proses penjualan tetap stabil. Berasarkan plot diatas merupakan jumlah produk yang terjual dalam jam tertentu, sehingga pemilik perusahaan dapat mempertimbangkan pada waktu yang mana ia akan membutuhkan staff tambahan. Gambar diatas menunjukkan bahwa penjualan dimulai pagi hari dengan jumlah produk yang terjual terus meningkat hingga mencapai titik puncak dimana penjualan tertinggi akan terjadi pada pukul 12:00 sebanyak 361320 penjualan dan menurun dengan signifikan hingga malam hari. Penjualan dengan 5 peringkat teratas berada pada pukul 12:00, dan menurun pada pukul 13:00 dengan jumlah 356564 penjualan, pukul 14:00 sebanyak 309820 penjualan, pukul 15:00 sebanyak 273300 penjualan, pukul 11:00 sebanyak 258016 , pukul 10:00 sebanyak 175610 penjualan dan seterusnya akan menurun.
+
+## #Can you find out which mont are most crowded and, therefore, need more staff?
+
+```{r}
+max_week_sale$month = month(max_week_sale$InvoiceDate)
+peakmonth =  max_week_sale%>% group_by(max_week_sale$month) %>% summarise(sales_month= sum(Sales))
+peakmonth
+plot(peakmonth)
+```
+Berikut merupakan plot dari penjualan produk perbulan, sehingga pemilik perusahaan dapat mengetahui puncak penjualan tertinggi yang dapat dipertimbangkan sebagai kebijakan dalam menarik perhatian konsumen. Berdasarkan plot yang ada diketahui bahwa penjualan tertinggi terjadi pada bulan ke-5 atau Mei dengan jumlah 648251 produk dan penjualan terendah terjadi pada bulan April dengan jumlah 426048 produk.
+## TOP 10 COSTUMER
+```{r}
+topten = max_week_sale %>% group_by(max_week_sale$CustomerID)%>% summarise(spend = sum(Sales))%>% arrange(desc(spend))%>% head(10)
+topten
+```
+
+Diketahui bahwa customer dengan ID 14646 merupakan customer paling banyak yang melakukan retail online dengan jumlah produk terbeli sebanyak 121929 produk. Kemudian diurutan kedua diduduki oleh customer dengan ID 18102 dengan jumlah pembelian sebanyak 106443 produk, urutan ketiga customer dengan ID 12415 dengan pembelian 73717 produk, dan seterusnya dimana semakin bawah keduduk ID customer maka semakin sedikit produk yang dibeli.
+
+
+## FINAL
+Setelah melakukan analisis deskriptif  maka dapat direkomendasikan  beberapa kebijakan yang dapat digunakan untuk memajukan perusahaan tersebut, diantara lain :
+
+1. Gratis Ongkos kirim atau discount ongkos kirim untuk produk yang dibeli bagi  negara  berdasarkan  analisis frekuensi  transaksi atas negara  dengan customer tertinggi.
+
+2. Menambah jumlah staff pada hari kamis  berdasarkan  analisis frekurnsi tertinggi penjualan perhari.
+
+3.Memberi poin  setiap kali pembelian kepada customer yang dapat ditukarkan dengan produk  tertentu berdasarkan analisis frekuensi  pembelian produk atas ID costumer.
+
+4.Memberi diskon atau potongan harga pada bulan mei berdasarkan analasis penjualan tertinggi perbulan. 
+
+5.Menjalankan flashsale  pada jam 12:00 berdasarkan analisis  penjualan tertinggi atas jam.
+
+6. Mengadakan kuis berhadiah  voucher belanja pada hari kamis berdasarkan analisis frekuensi tertinggi atas  penjualan perhari
+
+7.Memberikan cashback 10% atas pembelian produk dengan code 22423 berdasarkan analisis produk yang paling sering terjual.
